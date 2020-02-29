@@ -15,13 +15,13 @@ LFLAGS = -nostdlib -T linker.ld
 
 # Binary build
 
-tetris.elf: entry.o tetris.o
+lead.elf: entry.o lead.o
 	$(LD) $(LFLAGS) $^ -o $@
 
 entry.o: entry.asm
 	$(ASM) $(AFLAGS) $< -o $@
 
-tetris.o: tetris.c config.h
+lead.o: lead.c config.h
 	$(CC) $(CFLAGS) $< -c -o $@
 
 # ISO build
@@ -30,10 +30,10 @@ GENISOIMAGE = genisoimage
 GENISOFLAGS = -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table
 STAGE2 = stage2_eltorito
 
-tetris.iso: iso/boot/tetris.elf iso/boot/grub/stage2_eltorito iso/boot/grub/menu.lst
+lead.iso: iso/boot/lead.elf iso/boot/grub/stage2_eltorito iso/boot/grub/menu.lst
 	$(GENISOIMAGE) $(GENISOFLAGS) -o $@ iso
 
-iso/boot/tetris.elf: tetris.elf
+iso/boot/lead.elf: lead.elf
 	@mkdir -p iso/boot
 	cp $< $@
 
@@ -50,14 +50,14 @@ iso/boot/grub/menu.lst: menu.lst
 QEMU = qemu-system-i386
 QFLAGS = -soundhw pcspk
 
-qemu: tetris.elf
+qemu: lead.elf
 	$(QEMU) $(QFLAGS) -kernel $<
 
-qemu-iso: tetris.iso
+qemu-iso: lead.iso
 	$(QEMU) $(QFLAGS) -cdrom $<
 
 
 clean:
-	rm -rf tetris.elf entry.o tetris.o iso tetris.iso
+	rm -rf lead.elf entry.o lead.o iso lead.iso
 
 .PHONY: qemu qemu-iso clean

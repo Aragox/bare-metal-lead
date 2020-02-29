@@ -1,10 +1,10 @@
 /* About data, shown on boot and when paused */
-#define TETRIS_NAME    "Bare Metal Tetris"
-#define TETRIS_VERSION "1.0.0"
-#define TETRIS_URL     "https://github.com/programble/bare-metal-tetris"
+#define LEAD_NAME    "Bare Metal Lead"
+#define LEAD_VERSION "1.0.0"
+#define LEAD_URL     "https://github.com/Aragox/bare-metal-lead"
 
-/* Tetris well dimensions */
-#define WELL_WIDTH  (10)
+/* Lead well dimensions */
+#define WELL_WIDTH  (20)
 #define WELL_HEIGHT (22)
 
 /* Initial interval in milliseconds at which to apply gravity */
