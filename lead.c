@@ -299,8 +299,10 @@ u32 score = 0, level = 1, speed = INITIAL_SPEED;
 bool paused = false, game_over = false;
 
 /* Return true if the piece i with entity r will collide when placed at x,y. */
-bool collide(u8 i, u8 r, s8 x, s8 y)
+bool collide(s8 x, s8 y)
 {
+	
+	
 /*    u8 xx, yy;
     for (yy = 0; yy < 4; yy++)
         for (xx = 0; xx < 4; xx++)
@@ -323,6 +325,16 @@ bool move(s8 dx, s8 dy)
         return false;
     current.x += dx;
     current.y += dy;*/
+    if(!paused){
+        if(dx < 0 && 2 < player.x){
+    	    player.x += dx;
+    	    player.y += dy;
+        }
+        if(dx > 0 && player.x < COLS/2){
+    	    player.x += dx;
+    	    player.y += dy;
+        }
+    }
     return true;
 }
 
@@ -444,7 +456,7 @@ void draw(void)
                 puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
 
     /* Player */
-     puts(player.x, player.y, BRIGHT, YELLOW, ":)");
+     puts(player.x, 21, BRIGHT, YELLOW, "^^");
 
 status:
     if (paused)
@@ -565,8 +577,8 @@ noreturn main()
              player.hp = 1;
              player.dmg = 0;     
              player.out = false; 
-             player.x = COLS / 4;   
-             player.y = 0; 
+             player.x = 20;   
+             player.y = 21; 
 
     clear(BLACK);
     draw();
