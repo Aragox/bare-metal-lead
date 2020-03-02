@@ -444,7 +444,7 @@ void draw(void)
                 puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
 
     /* Player */
-     puts(20 + 1, 20 + 1, BRIGHT, YELLOW, ":)");
+     puts(player.x, player.y, BRIGHT, YELLOW, ":)");
 
 status:
     if (paused)
@@ -465,20 +465,26 @@ noreturn main()
 {
     clear(BLACK);
     draw_about();
+    puts(TITLE_X - 8,  TITLE_Y + 10, BLACK,            GREEN,   " Press any key to continue... ");
 
     /* Wait a full second to calibrate timing. */
     u32 itpms;
+    u8 start_key = scan();
     tps();
     itpms = tpms; while (tpms == itpms) tps();
     itpms = tpms; while (tpms == itpms) tps();
 
-/*    
+    // Wait for a "press key to continue"
+    while (1) {
+      if ((start_key = scan())) {
+       break;
+      }
+      tps();
+    }
+
     // Initialize pieces
     //Enemies
-    u8 start_key;
     u8 i;
-    start_key = scan();
-
         switch(start_key) {
         case KEY_1:
             level = 1;
@@ -561,7 +567,7 @@ noreturn main()
              player.out = false; 
              player.x = COLS / 4;   
              player.y = 0; 
-*/
+
     clear(BLACK);
     draw();
 
