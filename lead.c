@@ -285,13 +285,13 @@ struct Piece {
     u32 i; /* Index*/
     u32 hp; /*HP*/
     u32 dmg; /*Damage*/
-    bool out; /*State*/
+    bool alive; /*State*/
     s8 x, y; /* Coordinates */
 };
 
     struct Piece enemy[20];
-    struct Piece laser[30];
-    struct Piece wall[30];
+    struct Piece laser[ROWS];
+    struct Piece wall[ROWS];
     struct Piece player;
 
 u32 score = 0, level = 1, speed = INITIAL_SPEED;
@@ -314,7 +314,7 @@ bool collide(s8 x, s8 y)
     return false;
 }
 
-/* Try to move the current tetrimino by dx, dy and return true if successful.
+/* Try to move the player by dx, dy and return true if successful.
  */
 bool move(s8 dx, s8 dy)
 {
@@ -336,6 +336,40 @@ bool move(s8 dx, s8 dy)
         }
     }
     return true;
+}
+
+bool move_playerlasers()
+{
+    u8 i;
+
+    if (game_over)
+       return false;
+
+    if(!paused){
+       for (i = 0; i < ROWS; i++) {
+         if (laser[i].alive == true && laser[i].y > 1) { // Move lasers if they'are alive
+           laser[i].y += -1;
+           if (laser[i].y <= 1) { // Laser is not alive anymore
+             laser[i].alive = false;
+           }
+         }        
+       }
+    }
+    return true;    
+}
+
+void spawn_playerlaser() 
+{
+   u8 i;
+
+   for (i = 0; i < ROWS; i++) {
+     if (laser[i].alive == false) { // Search for lasers that aren't alive
+       laser[i].alive = true;
+       laser[i].x = player.x;
+       laser[i].y = WELL_HEIGHT - 2;
+       break;
+     }        
+   }
 }
 
 /* Try to move the current tetrimino down one and increase the score if
@@ -361,6 +395,8 @@ void update(void)
         }*/
        // spawn();
     }
+
+    move_playerlasers();
 
     /* Scoring */
 /*    switch (rows) {
@@ -429,7 +465,7 @@ void draw_about(void) {
  * their actual colors. */
 void draw(void)
 {
-    u8 x, y;
+    u8 x, y, i;
 
     if (paused) {
         draw_about();
@@ -458,6 +494,13 @@ void draw(void)
 
     // Player
      puts(player.x, WELL_HEIGHT - 1, BRIGHT, YELLOW, "^^");
+
+    // Player Lasers
+    for (i = 0; i < ROWS; i++) {
+      if (laser[i].alive == true) { // Draws lasers if they'are alive
+        puts(laser[i].x, laser[i].y, RED, BLACK, "||");
+      }        
+    }
 
 status:
     if (paused)
@@ -495,6 +538,10 @@ noreturn main()
       tps();
     }
 
+    // Inicialize game speed
+    double speed_s = pow(0.8 - (level + 8) * 0.007, level + 8);
+    speed = speed_s * 1000;
+
     // Initialize pieces
     //Enemies
     u8 i;
@@ -505,7 +552,7 @@ noreturn main()
                 enemy[i].i = 1;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
-                enemy[i].out = false; 
+                enemy[i].alive = false; 
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }
@@ -516,7 +563,7 @@ noreturn main()
                 enemy[i].i = 2;
                 enemy[i].hp = 999;
                 enemy[i].dmg = 1;     
-                enemy[i].out = false; 
+                enemy[i].alive = false; 
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }
@@ -527,7 +574,7 @@ noreturn main()
                 enemy[i].i = 3;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
-                enemy[i].out = false; 
+                enemy[i].alive = false; 
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }
@@ -538,7 +585,7 @@ noreturn main()
                 enemy[i].i = 4;
                 enemy[i].hp = 999;
                 enemy[i].dmg = 1;     
-                enemy[i].out = false; 
+                enemy[i].alive = false; 
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }
@@ -549,37 +596,39 @@ noreturn main()
                 enemy[i].i = 1;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
-                enemy[i].out = false; 
+                enemy[i].alive = false; 
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }           
         }
 
     //Wall
-            for (i = 0; i < 30; i++) {
+            for (i = 0; i < ROWS; i++) {
                 wall[i].i = 5;
                 wall[i].hp = 999;
                 wall[i].dmg = 1;     
-                wall[i].out = false; 
+                wall[i].alive = false; 
                 wall[i].x = 0;   
                 wall[i].y = 0; 
             }
-    //Laser (GOOD)
-            for (i = 0; i < 30; i++) {
+    //Player Laser
+            for (i = 0; i < ROWS; i++) {
                 laser[i].i = 6;
                 laser[i].hp = 999;
                 laser[i].dmg = 1;     
-                laser[i].out = false; 
+                laser[i].alive = false; 
                 laser[i].x = 0;   
                 laser[i].y = 0; 
             }
+
     //Player
              player.i = 7;
              player.hp = 1;
              player.dmg = 0;     
-             player.out = false; 
+             player.alive = false; 
              player.x = WELL_WIDTH + 1;   
              player.y = WELL_HEIGHT - 1; 
+
 
     clear(BLACK);
     draw();
@@ -643,10 +692,7 @@ loop:
             move(1, 0);
             break;
         case KEY_SPACE:
-            if (game_over)
-                break;
-            clear(BLACK);
-            paused = !paused;
+            spawn_playerlaser();
             break;
         case KEY_P:
             if (game_over)
