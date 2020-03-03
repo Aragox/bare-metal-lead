@@ -330,7 +330,7 @@ bool move(s8 dx, s8 dy)
     	    player.x += dx;
     	    player.y += dy;
         }
-        if(dx > 0 && player.x < COLS/2){
+        if(dx > 0 && player.x < WELL_WIDTH*2){
     	    player.x += dx;
     	    player.y += dy;
         }
@@ -436,15 +436,16 @@ void draw(void)
         goto status;
     }
 
-    /* Border */
+    // Border
     for (y = 2; y < WELL_HEIGHT; y++) {
         putc(WELL_X - 1,            y, BLACK, GRAY, ' ');
-        putc(COLS / 2 + 2,          y, BLACK, GRAY, ' ');
+       // putc(COLS / 2 + 2,          y, BLACK, GRAY, ' ');
+        putc(WELL_WIDTH*2 + 2,          y, BLACK, GRAY, ' ');
     }
     for (x = 0; x < WELL_WIDTH * 2 + 2; x++)
         putc(WELL_X + x - 1, WELL_HEIGHT, BLACK, GRAY, ' ');
 
-    /* Well */
+    // Well 
     for (y = 0; y < 2; y++)
         for (x = 0; x < WELL_WIDTH; x++)
             puts(WELL_X + x * 2, y, BLACK, BLACK, "  ");
@@ -455,8 +456,8 @@ void draw(void)
             else
                 puts(WELL_X + x * 2, y, BRIGHT, BLACK, "::");
 
-    /* Player */
-     puts(player.x, 21, BRIGHT, YELLOW, "^^");
+    // Player
+     puts(player.x, WELL_HEIGHT - 1, BRIGHT, YELLOW, "^^");
 
 status:
     if (paused)
@@ -464,13 +465,13 @@ status:
     if (game_over)
         puts(STATUS_X, STATUS_Y, BRIGHT | RED, BLACK, "GAME OVER");
 
-    /* Score */
-    puts(SCORE_X + 2, SCORE_Y, BLUE, BLACK, "SCORE");
-    puts(SCORE_X, SCORE_Y + 2, BRIGHT | BLUE, BLACK, itoa(score, 10, 10));
+    // Score 
+    puts(SCORE_X + 7, SCORE_Y, BLUE, BLACK, "SCORE");
+    puts(SCORE_X + 5, SCORE_Y + 2, BRIGHT | BLUE, BLACK, itoa(score, 10, 10));
 
-    /* Level */
-    puts(LEVEL_X + 2, LEVEL_Y, BLUE, BLACK, "LEVEL");
-    puts(LEVEL_X, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
+    // Level 
+    puts(LEVEL_X + 7, LEVEL_Y, BLUE, BLACK, "LEVEL");
+    puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
 
 noreturn main()
@@ -577,8 +578,8 @@ noreturn main()
              player.hp = 1;
              player.dmg = 0;     
              player.out = false; 
-             player.x = 20;   
-             player.y = 21; 
+             player.x = WELL_WIDTH + 1;   
+             player.y = WELL_HEIGHT - 1; 
 
     clear(BLACK);
     draw();

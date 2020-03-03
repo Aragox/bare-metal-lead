@@ -4,7 +4,7 @@
 #define LEAD_URL     "https://github.com/Aragox/bare-metal-lead"
 
 /* Lead well dimensions */
-#define WELL_WIDTH  (20)
+#define WELL_WIDTH  (28)
 #define WELL_HEIGHT (22)
 
 /* Initial interval in milliseconds at which to apply gravity */
