@@ -291,7 +291,7 @@ struct Piece {
 
 #define N_ENEMYS (25)
 #define N_LASERS (25)
-#define N_WALLS (50)
+#define N_WALLS (80)
 
     struct Piece enemy[N_ENEMYS];
     struct Piece laser[N_LASERS];
@@ -386,6 +386,30 @@ bool move_enemys()
     return true;    
 }
 
+/* Try to move the walls by 1 in y and return true if successful.
+ */
+bool move_walls()
+{
+    u8 i;
+
+    if (game_over)
+       return false;
+
+    if(!paused){
+       for (i = 0; i < N_WALLS; i++) {
+         if (wall[i].alive == true && wall[i].y < WELL_HEIGHT) { // Move walls if they'are alive
+           wall[i].y += 1;
+           if (wall[i].y >= WELL_HEIGHT) { // Wall is not alive anymore
+             wall[i].alive = false;
+             wall[i].x = 0;
+             wall[i].y = 0;
+           }
+         }        
+       }
+    }
+    return true;    
+}
+
 /* Spawns a player's laser.
  */
 void spawn_playerlaser() 
@@ -407,13 +431,34 @@ void spawn_playerlaser()
 void spawn_enemy() 
 {
    u8 i;
-   u32 r = rand(WELL_WIDTH*2 - 1) + 2; // Random range
+//   u32 r = rand(WELL_WIDTH*2 - 1) + 2; // Random range
+   u32 r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3; // Random range
    
    for (i = 0; i < N_ENEMYS; i++) {
      if (enemy[i].alive == false) { // Search for enemys that aren't alive
        enemy[i].alive = true;
        enemy[i].x = r;
        enemy[i].y = 2;
+       break;
+     }        
+   }
+}
+
+/* Spawns a wall in orientation left or rigth, and with a differential dx.
+ */
+void spawn_wall(u8 orientation, s8 dx) 
+{
+   u8 i;
+   
+   for (i = 0; i < N_WALLS; i++) {
+     if (wall[i].alive == false) { // Search for walls that aren't alive
+       wall[i].alive = true;
+       if (orientation == 0) { // If orientation equals left
+         wall[i].x += WELL_WIDTH - WELL_WIDTH/2 + 1 + dx;
+       } else { // If orientation equals right
+         wall[i].x += WELL_WIDTH + WELL_WIDTH/2 + 1 + dx;
+       }
+       wall[i].y = 2;
        break;
      }        
    }
@@ -544,29 +589,49 @@ void draw(void)
      puts(player.x, WELL_HEIGHT - 1, BRIGHT, YELLOW, "^^");
 
     // Enemys
-    for (i = 0; i < ROWS; i++) {
+    for (i = 0; i < N_ENEMYS; i++) {
       if (enemy[i].alive == true) { // Draws enemys if they'are alive
         switch(level) { // Show enemys for level
         case 1:
-            puts(enemy[i].x, enemy[i].y, MAGENTA, BLACK, "VV");
+            puts(enemy[i].x, enemy[i].y, RED, GRAY, "VV");
             break;
         case 2:
             puts(enemy[i].x, enemy[i].y, YELLOW, BLACK, "OO");
             break;
         case 3:
-            puts(enemy[i].x, enemy[i].y, BLUE, BLACK, "XX");
+            puts(enemy[i].x, enemy[i].y, GRAY, BLUE, "XX");
             break;
         case 4:
-            puts(enemy[i].x, enemy[i].y, BRIGHT, BLACK, "O)");
+            puts(enemy[i].x, enemy[i].y, YELLOW, GRAY, "S)");
             break;  
         }
       }        
     }
 
     // Player Lasers
-    for (i = 0; i < ROWS; i++) {
+    for (i = 0; i < N_LASERS; i++) {
       if (laser[i].alive == true) { // Draws lasers if they'are alive
         puts(laser[i].x, laser[i].y, RED, BLACK, "||");
+      }        
+    }
+
+    // Walls
+    for (i = 0; i < N_WALLS; i++) {
+      if (wall[i].alive == true) { // Draws walls if they'are alive
+        switch(level) { // Show walls for level
+        case 1:
+            puts(wall[i].x, wall[i].y, MAGENTA, RED, "[]");
+            break;
+        case 2:
+            puts(wall[i].x, wall[i].y, BLACK, YELLOW, "[]");
+            break;
+        case 3:
+            puts(wall[i].x, wall[i].y, RED, BLUE, "[]");
+            break;
+        case 4:
+            puts(wall[i].x, wall[i].y, CYAN, MAGENTA, "[]");
+            break;  
+        }
       }        
     }
 
@@ -585,7 +650,12 @@ status:
     puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
 
-u32 cont_enemyspawn = 200000, cont_enemymove = 200000;
+#define WALLSPAWN (75000)
+#define WALLMOVE (37500)
+#define ENEMYSPAWN (400000)
+#define ENEMYMOVE (200000)
+
+u32 cont_enemyspawn = ENEMYSPAWN, cont_wallspawn = WALLSPAWN, cont_enemymove = ENEMYMOVE, cont_wallmove = WALLMOVE;
 
 
 noreturn main()
@@ -610,7 +680,7 @@ noreturn main()
     }
 
     // Inicialize game speed
-    double speed_s = pow(0.8 - (10) * 0.007, (10));
+    double speed_s = pow(0.8 - (11) * 0.007, (11));
     speed = speed_s * 1000;
 
     // Initialize pieces
@@ -738,16 +808,29 @@ loop:
         puts(7, 19, BLUE,          BLACK, "- Toggle help");
     }
 
+    if (cont_wallspawn > 0) { // Spawns a wall once counter reaches zero
+      cont_wallspawn += -1;
+    } else {
+      cont_wallspawn = WALLSPAWN;
+      spawn_wall(0, 0);
+      spawn_wall(1, 0);
+    }
     if (cont_enemyspawn > 0) { // Spawns an enemy once counter reaches zero
       cont_enemyspawn += -1;
     } else {
-      cont_enemyspawn = 200000;
+      cont_enemyspawn = ENEMYSPAWN;
       spawn_enemy();
+    }
+    if (cont_wallmove > 0) { // Moves walls once counter reaches zero
+      cont_wallmove += -1;
+    } else {
+      cont_wallmove = WALLMOVE;
+      move_walls();
     }
     if (cont_enemymove > 0) { // Moves enemys once counter reaches zero
       cont_enemymove += -1;
     } else {
-      cont_enemymove = 200000;
+      cont_enemymove = ENEMYMOVE;
       move_enemys();
     }
 
