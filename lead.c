@@ -289,9 +289,13 @@ struct Piece {
     s8 x, y; /* Coordinates */
 };
 
-    struct Piece enemy[20];
-    struct Piece laser[ROWS];
-    struct Piece wall[ROWS];
+#define N_ENEMYS (25)
+#define N_LASERS (25)
+#define N_WALLS (50)
+
+    struct Piece enemy[N_ENEMYS];
+    struct Piece laser[N_LASERS];
+    struct Piece wall[N_WALLS];
     struct Piece player;
 
 u32 score = 0, level = 1, speed = INITIAL_SPEED;
@@ -338,6 +342,8 @@ bool move(s8 dx, s8 dy)
     return true;
 }
 
+/* Try to move the player's lasers by 1 in y and return true if successful.
+ */
 bool move_playerlasers()
 {
     u8 i;
@@ -346,7 +352,7 @@ bool move_playerlasers()
        return false;
 
     if(!paused){
-       for (i = 0; i < ROWS; i++) {
+       for (i = 0; i < N_LASERS; i++) {
          if (laser[i].alive == true && laser[i].y > 1) { // Move lasers if they'are alive
            laser[i].y += -1;
            if (laser[i].y <= 1) { // Laser is not alive anymore
@@ -358,11 +364,35 @@ bool move_playerlasers()
     return true;    
 }
 
+/* Try to move the enemys by 1 in y and return true if successful.
+ */
+bool move_enemys()
+{
+    u8 i;
+
+    if (game_over)
+       return false;
+
+    if(!paused){
+       for (i = 0; i < N_ENEMYS; i++) {
+         if (enemy[i].alive == true && enemy[i].y < WELL_HEIGHT) { // Move enemys if they'are alive
+           enemy[i].y += 1;
+           if (enemy[i].y >= WELL_HEIGHT) { // Enemy is not alive anymore
+             enemy[i].alive = false;
+           }
+         }        
+       }
+    }
+    return true;    
+}
+
+/* Spawns a player's laser.
+ */
 void spawn_playerlaser() 
 {
    u8 i;
 
-   for (i = 0; i < ROWS; i++) {
+   for (i = 0; i < N_LASERS; i++) {
      if (laser[i].alive == false) { // Search for lasers that aren't alive
        laser[i].alive = true;
        laser[i].x = player.x;
@@ -371,6 +401,25 @@ void spawn_playerlaser()
      }        
    }
 }
+
+/* Spawns an enemy.
+ */
+void spawn_enemy() 
+{
+   u8 i;
+   u32 r = rand(WELL_WIDTH*2 - 1) + 2; // Random range
+   
+   for (i = 0; i < N_ENEMYS; i++) {
+     if (enemy[i].alive == false) { // Search for enemys that aren't alive
+       enemy[i].alive = true;
+       enemy[i].x = r;
+       enemy[i].y = 2;
+       break;
+     }        
+   }
+}
+
+
 
 /* Try to move the current tetrimino down one and increase the score if
  * successful. */
@@ -446,7 +495,6 @@ void draw_about(void) {
          LEAD_NAME " " LEAD_VERSION " " LEAD_URL);
 }
 
-//#define WELL_X (COLS / 2 - WELL_WIDTH)
 #define WELL_X (2)
 
 #define STATUS_X (COLS * 3/4)
@@ -495,6 +543,26 @@ void draw(void)
     // Player
      puts(player.x, WELL_HEIGHT - 1, BRIGHT, YELLOW, "^^");
 
+    // Enemys
+    for (i = 0; i < ROWS; i++) {
+      if (enemy[i].alive == true) { // Draws enemys if they'are alive
+        switch(level) { // Show enemys for level
+        case 1:
+            puts(enemy[i].x, enemy[i].y, MAGENTA, BLACK, "VV");
+            break;
+        case 2:
+            puts(enemy[i].x, enemy[i].y, YELLOW, BLACK, "OO");
+            break;
+        case 3:
+            puts(enemy[i].x, enemy[i].y, BLUE, BLACK, "XX");
+            break;
+        case 4:
+            puts(enemy[i].x, enemy[i].y, BRIGHT, BLACK, "O)");
+            break;  
+        }
+      }        
+    }
+
     // Player Lasers
     for (i = 0; i < ROWS; i++) {
       if (laser[i].alive == true) { // Draws lasers if they'are alive
@@ -516,6 +584,9 @@ status:
     puts(LEVEL_X + 7, LEVEL_Y, BLUE, BLACK, "LEVEL");
     puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
+
+u32 cont_enemyspawn = 200000, cont_enemymove = 200000;
+
 
 noreturn main()
 {
@@ -539,7 +610,7 @@ noreturn main()
     }
 
     // Inicialize game speed
-    double speed_s = pow(0.8 - (level + 8) * 0.007, level + 8);
+    double speed_s = pow(0.8 - (10) * 0.007, (10));
     speed = speed_s * 1000;
 
     // Initialize pieces
@@ -548,7 +619,7 @@ noreturn main()
         switch(start_key) {
         case KEY_1:
             level = 1;
-            for (i = 0; i < 20; i++) {
+            for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 1;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
@@ -559,7 +630,7 @@ noreturn main()
             break;
         case KEY_2:
             level = 2;
-            for (i = 0; i < 20; i++) {
+            for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 2;
                 enemy[i].hp = 999;
                 enemy[i].dmg = 1;     
@@ -570,7 +641,7 @@ noreturn main()
             break;
         case KEY_3:
             level = 3;
-            for (i = 0; i < 20; i++) {
+            for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 3;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
@@ -581,7 +652,7 @@ noreturn main()
             break;
         case KEY_4:
             level = 4;
-            for (i = 0; i < 20; i++) {
+            for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 4;
                 enemy[i].hp = 999;
                 enemy[i].dmg = 1;     
@@ -592,7 +663,7 @@ noreturn main()
             break;
         default:
             level = 1; 
-            for (i = 0; i < 20; i++) {
+            for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 1;
                 enemy[i].hp = 3;
                 enemy[i].dmg = 1;     
@@ -603,7 +674,7 @@ noreturn main()
         }
 
     //Wall
-            for (i = 0; i < ROWS; i++) {
+            for (i = 0; i < N_WALLS; i++) {
                 wall[i].i = 5;
                 wall[i].hp = 999;
                 wall[i].dmg = 1;     
@@ -612,7 +683,7 @@ noreturn main()
                 wall[i].y = 0; 
             }
     //Player Laser
-            for (i = 0; i < ROWS; i++) {
+            for (i = 0; i < N_LASERS; i++) {
                 laser[i].i = 6;
                 laser[i].hp = 999;
                 laser[i].dmg = 1;     
@@ -665,6 +736,19 @@ loop:
         puts(7, 18, BLUE,          BLACK, "- Toggle debug info");
         puts(1, 19, BRIGHT | BLUE, BLACK, "H");
         puts(7, 19, BLUE,          BLACK, "- Toggle help");
+    }
+
+    if (cont_enemyspawn > 0) { // Spawns an enemy once counter reaches zero
+      cont_enemyspawn += -1;
+    } else {
+      cont_enemyspawn = 200000;
+      spawn_enemy();
+    }
+    if (cont_enemymove > 0) { // Moves enemys once counter reaches zero
+      cont_enemymove += -1;
+    } else {
+      cont_enemymove = 200000;
+      move_enemys();
     }
 
     bool updated = false;
