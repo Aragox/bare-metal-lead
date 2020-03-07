@@ -426,13 +426,27 @@ void spawn_playerlaser()
    }
 }
 
-/* Spawns an enemy.
+/* Spawns an enemy, with a differential dx.
  */
-void spawn_enemy() 
+void spawn_enemy(s8 dx) 
 {
    u8 i;
-//   u32 r = rand(WELL_WIDTH*2 - 1) + 2; // Random range
-   u32 r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3; // Random range
+   u32 r = 0; // Random range
+//   u32 r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3; // Random range
+   switch(level) { // Select the range between walls for level
+   case 1:
+       r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3 + dx;
+       break;
+   case 2:
+       r = rand(WELL_WIDTH - WELL_WIDTH/4 - 2) + WELL_WIDTH - (WELL_WIDTH/2 - WELL_WIDTH/8) + 3 + dx;
+       break;
+   case 3:
+       r = rand(WELL_WIDTH - WELL_WIDTH/4 - 2) + WELL_WIDTH - (WELL_WIDTH/2 - WELL_WIDTH/8) + 3 + dx;
+       break;
+   case 4:
+       r = rand(WELL_WIDTH/2 - 3) + WELL_WIDTH - WELL_WIDTH/4 + 3 + dx;
+       break;  
+   }
    
    for (i = 0; i < N_ENEMYS; i++) {
      if (enemy[i].alive == false) { // Search for enemys that aren't alive
@@ -449,14 +463,29 @@ void spawn_enemy()
 void spawn_wall(u8 orientation, s8 dx) 
 {
    u8 i;
+   u32 dif = WELL_WIDTH/2;
    
    for (i = 0; i < N_WALLS; i++) {
      if (wall[i].alive == false) { // Search for walls that aren't alive
        wall[i].alive = true;
+        switch(level) { // Select the range between walls for level
+        case 1:
+            dif = WELL_WIDTH/2;
+            break;
+        case 2:
+            dif = WELL_WIDTH/2 - WELL_WIDTH/8;
+            break;
+        case 3:
+            dif = WELL_WIDTH/2 - WELL_WIDTH/8;
+            break;
+        case 4:
+            dif = WELL_WIDTH/4;
+            break;  
+        }
        if (orientation == 0) { // If orientation equals left
-         wall[i].x += WELL_WIDTH - WELL_WIDTH/2 + 1 + dx;
+         wall[i].x += WELL_WIDTH - dif + 1 + dx;
        } else { // If orientation equals right
-         wall[i].x += WELL_WIDTH + WELL_WIDTH/2 + 1 + dx;
+         wall[i].x += WELL_WIDTH + dif + 1 + dx;
        }
        wall[i].y = 2;
        break;
@@ -649,13 +678,22 @@ status:
     puts(LEVEL_X + 7, LEVEL_Y, BLUE, BLACK, "LEVEL");
     puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
-
+//#define WALLSPAWN (400000)
+//#define WALLMOVE (97500)
 #define WALLSPAWN (75000)
 #define WALLMOVE (37500)
 #define ENEMYSPAWN (400000)
 #define ENEMYMOVE (200000)
 
+#define DIRECTIONSIZE (24)
+#define REPEATMOVE (9)
+#define STARTWALLCHANGE (1000000)
+
 u32 cont_enemyspawn = ENEMYSPAWN, cont_wallspawn = WALLSPAWN, cont_enemymove = ENEMYMOVE, cont_wallmove = WALLMOVE;
+
+u8 direction[DIRECTIONSIZE] = { 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 1, 0, 0, 1, 1, 0, 1, 2, 0, 0, 2, 1 };
+u8 dx = 0;
+u32 cont_start_dx = STARTWALLCHANGE, cont_repeat = REPEATMOVE, cont_change = 0;
 
 
 noreturn main()
@@ -807,19 +845,46 @@ loop:
         puts(1, 19, BRIGHT | BLUE, BLACK, "H");
         puts(7, 19, BLUE,          BLACK, "- Toggle help");
     }
+  if (level == 2 || level == 3) {
+    if (cont_start_dx > 0) { // Update dx for spawn of walls and enemys once cont_start_dx reaches zero
+      cont_start_dx += -1;
+    } else {
 
+      if (cont_wallspawn <= 0) { // If walls are ready to spawn
+        cont_repeat += -1;
+
+          switch(direction[cont_change]) { // Select direction
+          case 0:
+              dx += - 1;
+              break;
+          case 1:
+              dx += 1;
+              break;
+          }
+
+        if (cont_repeat <= 0) { // Change direction
+          cont_repeat = REPEATMOVE;
+          cont_change += 1;
+          if (cont_change >= DIRECTIONSIZE) { // Finishes update for dx of walls and enemys 
+            cont_change = 0;
+            cont_start_dx = STARTWALLCHANGE;
+          }
+        }
+      }
+    }
+  }
     if (cont_wallspawn > 0) { // Spawns a wall once counter reaches zero
       cont_wallspawn += -1;
     } else {
       cont_wallspawn = WALLSPAWN;
-      spawn_wall(0, 0);
-      spawn_wall(1, 0);
+      spawn_wall(0, dx);
+      spawn_wall(1, dx);
     }
     if (cont_enemyspawn > 0) { // Spawns an enemy once counter reaches zero
       cont_enemyspawn += -1;
     } else {
       cont_enemyspawn = ENEMYSPAWN;
-      spawn_enemy();
+      spawn_enemy(dx);
     }
     if (cont_wallmove > 0) { // Moves walls once counter reaches zero
       cont_wallmove += -1;
