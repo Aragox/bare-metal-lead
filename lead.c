@@ -302,41 +302,19 @@ u32 score = 0, level = 1, speed = INITIAL_SPEED;
 
 bool paused = false, game_over = false;
 
-/* Return true if the piece i with entity r will collide when placed at x,y. */
-bool collide(s8 x, s8 y)
-{
-	
-	
-/*    u8 xx, yy;
-    for (yy = 0; yy < 4; yy++)
-        for (xx = 0; xx < 4; xx++)
-            //if (TETRIS[i][r][yy][xx])
-                if (x + xx < 0 || x + xx >= WELL_WIDTH ||
-                    y + yy < 0 || y + yy >= WELL_HEIGHT ||
-                    well[y + yy][x + xx])
-                        return true;*/
-    return false;
-}
-
-/* Try to move the player by dx, dy and return true if successful.
+/* Try to move the player by dx and return true if successful.
  */
-bool move(s8 dx, s8 dy)
+bool move(s8 dx)
 {
     if (game_over)
         return false;
 
-/*    if (collide(current.i, current.e, current.x + dx, current.y + dy))
-        return false;
-    current.x += dx;
-    current.y += dy;*/
     if(!paused){
         if(dx < 0 && 2 < player.x){
     	    player.x += dx;
-    	    player.y += dy;
         }
         if(dx > 0 && player.x < WELL_WIDTH*2){
     	    player.x += dx;
-    	    player.y += dy;
         }
     }
     return true;
@@ -346,7 +324,7 @@ bool move(s8 dx, s8 dy)
  */
 bool move_playerlasers()
 {
-    u8 i;
+    u8 i, j;
 
     if (game_over)
        return false;
@@ -358,6 +336,18 @@ bool move_playerlasers()
            if (laser[i].y <= 1) { // Laser is not alive anymore
              laser[i].alive = false;
            }
+
+           for (j = 0; j < N_ENEMYS; j++) { // If enemys collide with lasers
+             if (enemy[j].alive == true) { // If enemy is alive
+               if (laser[i].y == enemy[j].y && ((laser[i].x == enemy[j].x) || (laser[i].x == enemy[j].x + 1) || (laser[i].x + 1 == enemy[j].x))) {
+                 enemy[j].hp += -laser[i].dmg;
+                 laser[i].alive = false; // Laser is not alive anymore 
+                 if (enemy[j].hp <= 0) {
+                   enemy[j].alive = false; // Enemy is not alive anymore                   
+                 }      
+               }
+             }
+           } 
          }        
        }
     }
@@ -380,6 +370,12 @@ bool move_enemys()
            if (enemy[i].y >= WELL_HEIGHT) { // Enemy is not alive anymore
              enemy[i].alive = false;
            }
+           // If player collides with enemy
+           if (enemy[i].y == WELL_HEIGHT - 1) {
+             if ((enemy[i].x == player.x) || (enemy[i].x == player.x + 1) || (enemy[i].x + 1 == player.x)) {
+               game_over = true; // GAME OVER    
+             }
+           }   
          }        
        }
     }
@@ -390,15 +386,46 @@ bool move_enemys()
  */
 bool move_walls()
 {
-    u8 i;
+    u8 i, j;
 
     if (game_over)
        return false;
 
     if(!paused){
+
        for (i = 0; i < N_WALLS; i++) {
          if (wall[i].alive == true && wall[i].y < WELL_HEIGHT) { // Move walls if they'are alive
            wall[i].y += 1;
+
+           for (j = 0; j < N_ENEMYS; j++) { // If enemys collide with walls 
+             if (enemy[j].alive == true) { // If enemy is alive
+               switch(wall[i].i) { // If wall orientation is left or right
+                 case 1: // Left
+                     if (wall[i].x == enemy[j].x && wall[i].y == enemy[j].y) {
+                       enemy[j].x += 3;       
+                     }
+                     if (wall[i].x + 1 == enemy[j].x && wall[i].y == enemy[j].y) {
+                       enemy[j].x += 2;         
+                     }
+                     break;
+                 case 2: // Right
+                     if (wall[i].x == enemy[j].x + 1 && wall[i].y == enemy[j].y) {
+                       enemy[j].x += -2;       
+                     }
+                     if (wall[i].x + 1 == enemy[j].x + 1 && wall[i].y == enemy[j].y) {
+                       enemy[j].x += -3;         
+                     }
+                     break;
+               } 
+             }       
+           } 
+           // If player collides with walls
+           if (wall[i].y == WELL_HEIGHT - 1) {
+             if ((wall[i].x == player.x) || (wall[i].x == player.x + 1) || (wall[i].x + 1 == player.x)) {
+               game_over = true; // GAME OVER    
+             }
+           }         
+       
            if (wall[i].y >= WELL_HEIGHT) { // Wall is not alive anymore
              wall[i].alive = false;
              wall[i].x = 0;
@@ -415,6 +442,7 @@ bool move_walls()
 void spawn_playerlaser() 
 {
    u8 i;
+   if (!game_over) {
 
    for (i = 0; i < N_LASERS; i++) {
      if (laser[i].alive == false) { // Search for lasers that aren't alive
@@ -424,6 +452,8 @@ void spawn_playerlaser()
        break;
      }        
    }
+   
+   }
 }
 
 /* Spawns an enemy, with a differential dx.
@@ -432,7 +462,9 @@ void spawn_enemy(s8 dx)
 {
    u8 i;
    u32 r = 0; // Random range
-//   u32 r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3; // Random range
+
+   if (!game_over) {
+
    switch(level) { // Select the range between walls for level
    case 1:
        r = rand(WELL_WIDTH - 3) + WELL_WIDTH - WELL_WIDTH/2 + 3 + dx;
@@ -453,8 +485,28 @@ void spawn_enemy(s8 dx)
        enemy[i].alive = true;
        enemy[i].x = r;
        enemy[i].y = 2;
+       switch(level) { // Select the range between walls for level
+       case 1:
+           enemy[i].hp = 3;
+           enemy[i].dmg = 1;  
+           break;
+       case 2:
+           enemy[i].hp = 999;
+           enemy[i].dmg = 1;    
+           break;
+       case 3:
+           enemy[i].hp = 3;
+           enemy[i].dmg = 1;  
+           break;
+       case 4:
+           enemy[i].hp = 999;
+           enemy[i].dmg = 1; 
+           break;  
+       }
        break;
      }        
+   }
+
    }
 }
 
@@ -464,7 +516,9 @@ void spawn_wall(u8 orientation, s8 dx)
 {
    u8 i;
    u32 dif = WELL_WIDTH/2;
-   
+
+   if (!game_over) {   
+
    for (i = 0; i < N_WALLS; i++) {
      if (wall[i].alive == false) { // Search for walls that aren't alive
        wall[i].alive = true;
@@ -483,42 +537,25 @@ void spawn_wall(u8 orientation, s8 dx)
             break;  
         }
        if (orientation == 0) { // If orientation equals left
+         wall[i].i = 1; // Reset id
          wall[i].x += WELL_WIDTH - dif + 1 + dx;
        } else { // If orientation equals right
+         wall[i].i = 2; // Reset id
          wall[i].x += WELL_WIDTH + dif + 1 + dx;
        }
        wall[i].y = 2;
        break;
      }        
    }
+
+   }
 }
 
-
-
-/* Try to move the current tetrimino down one and increase the score if
- * successful. */
-void soft_drop(void)
-{
-    if (move(0, 1))
-        score += SOFT_DROP_SCORE;
-}
 
 /* Update the game state. Called at an interval relative to the current level.
  */
 void update(void)
 {
-    /* Gravity: move the current tetrimino down by one. If it cannot be moved
-     * and it is still in the top row, set game over state. If it cannot be
-     * moved down but is not in the top row, lock it in place and spawn a new
-     * tetrimino. */
-    if (!move(0, 1)) {
-  /*      if (current.y == 0) {
-            game_over = true;
-            return;
-        }*/
-       // spawn();
-    }
-
     move_playerlasers();
 
     /* Scoring */
@@ -527,17 +564,6 @@ void update(void)
     case 2: score += SCORE_FACTOR_2 * level; break;
     case 3: score += SCORE_FACTOR_3 * level; break;
     case 4: score += SCORE_FACTOR_4 * level; break;
-    }*/
-
-    /* Leveling: increase the level for every 10 rows cleared, increase game
-     * speed. */
-/*    level_rows += rows;
-    if (level_rows >= ROWS_PER_LEVEL) {
-        level++;
-        level_rows -= ROWS_PER_LEVEL;
-
-        double speed_s = pow(0.8 - (level - 1) * 0.007, level - 1);
-        speed = speed_s * 1000;
     }*/
 }
 
@@ -718,7 +744,7 @@ noreturn main()
     }
 
     // Inicialize game speed
-    double speed_s = pow(0.8 - (11) * 0.007, (11));
+    double speed_s = pow(0.8 - (10) * 0.007, (10));
     speed = speed_s * 1000;
 
     // Initialize pieces
@@ -783,7 +809,7 @@ noreturn main()
 
     //Wall
             for (i = 0; i < N_WALLS; i++) {
-                wall[i].i = 5;
+                wall[i].i = 1;
                 wall[i].hp = 999;
                 wall[i].dmg = 1;     
                 wall[i].alive = false; 
@@ -792,7 +818,7 @@ noreturn main()
             }
     //Player Laser
             for (i = 0; i < N_LASERS; i++) {
-                laser[i].i = 6;
+                laser[i].i = 1;
                 laser[i].hp = 999;
                 laser[i].dmg = 1;     
                 laser[i].alive = false; 
@@ -801,7 +827,7 @@ noreturn main()
             }
 
     //Player
-             player.i = 7;
+             player.i = 1;
              player.hp = 1;
              player.dmg = 0;     
              player.alive = false; 
@@ -845,6 +871,8 @@ loop:
         puts(1, 19, BRIGHT | BLUE, BLACK, "H");
         puts(7, 19, BLUE,          BLACK, "- Toggle help");
     }
+
+  bool updated = false;
   if (level == 2 || level == 3) {
     if (cont_start_dx > 0) { // Update dx for spawn of walls and enemys once cont_start_dx reaches zero
       cont_start_dx += -1;
@@ -879,27 +907,29 @@ loop:
       cont_wallspawn = WALLSPAWN;
       spawn_wall(0, dx);
       spawn_wall(1, dx);
+      updated = true;
     }
     if (cont_enemyspawn > 0) { // Spawns an enemy once counter reaches zero
       cont_enemyspawn += -1;
     } else {
       cont_enemyspawn = ENEMYSPAWN;
       spawn_enemy(dx);
+      updated = true;
     }
     if (cont_wallmove > 0) { // Moves walls once counter reaches zero
       cont_wallmove += -1;
     } else {
       cont_wallmove = WALLMOVE;
       move_walls();
+      updated = true;
     }
     if (cont_enemymove > 0) { // Moves enemys once counter reaches zero
       cont_enemymove += -1;
     } else {
       cont_enemymove = ENEMYMOVE;
       move_enemys();
+      updated = true;
     }
-
-    bool updated = false;
 
     u8 key;
     if ((key = scan())) {
@@ -918,10 +948,10 @@ loop:
             clear(BLACK);
             break;
         case KEY_LEFT:
-            move(-1, 0);
+            move(-1);
             break;
         case KEY_RIGHT:
-            move(1, 0);
+            move(1);
             break;
         case KEY_SPACE:
             spawn_playerlaser();
