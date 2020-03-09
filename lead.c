@@ -302,6 +302,13 @@ u32 score = 0, level = 1, speed = INITIAL_SPEED;
 
 bool paused = false, game_over = false;
 
+/* Increase the score by value, and change to next level.
+ */
+void increase_score(u32 value)
+{
+  score += value;
+} 
+
 /* Try to move the player by dx and return true if successful.
  */
 bool move(s8 dx)
@@ -343,6 +350,7 @@ bool move_playerlasers()
                  enemy[j].hp += -laser[i].dmg;
                  laser[i].alive = false; // Laser is not alive anymore 
                  if (enemy[j].hp <= 0) {
+                   increase_score(3);
                    enemy[j].alive = false; // Enemy is not alive anymore                   
                  }      
                }
@@ -369,6 +377,14 @@ bool move_enemys()
            enemy[i].y += 1;
            if (enemy[i].y >= WELL_HEIGHT) { // Enemy is not alive anymore
              enemy[i].alive = false;
+             switch(level) { // Increase score if level 2 or 4
+             case 2:
+             increase_score(3);
+             break;
+             case 4:
+             increase_score(3);
+             break;  
+             }
            }
            // If player collides with enemy
            if (enemy[i].y == WELL_HEIGHT - 1) {
@@ -442,7 +458,7 @@ bool move_walls()
 void spawn_playerlaser() 
 {
    u8 i;
-   if (!game_over) {
+   if (!game_over && !paused) {
 
    for (i = 0; i < N_LASERS; i++) {
      if (laser[i].alive == false) { // Search for lasers that aren't alive
@@ -463,7 +479,7 @@ void spawn_enemy(s8 dx)
    u8 i;
    u32 r = 0; // Random range
 
-   if (!game_over) {
+   if (!game_over && !paused) {
 
    switch(level) { // Select the range between walls for level
    case 1:
@@ -487,7 +503,7 @@ void spawn_enemy(s8 dx)
        enemy[i].y = 2;
        switch(level) { // Select the range between walls for level
        case 1:
-           enemy[i].hp = 3;
+           enemy[i].hp = 2;
            enemy[i].dmg = 1;  
            break;
        case 2:
@@ -495,7 +511,7 @@ void spawn_enemy(s8 dx)
            enemy[i].dmg = 1;    
            break;
        case 3:
-           enemy[i].hp = 3;
+           enemy[i].hp = 2;
            enemy[i].dmg = 1;  
            break;
        case 4:
@@ -517,7 +533,7 @@ void spawn_wall(u8 orientation, s8 dx)
    u8 i;
    u32 dif = WELL_WIDTH/2;
 
-   if (!game_over) {   
+   if (!game_over && !paused) {   
 
    for (i = 0; i < N_WALLS; i++) {
      if (wall[i].alive == false) { // Search for walls that aren't alive
@@ -551,20 +567,11 @@ void spawn_wall(u8 orientation, s8 dx)
    }
 }
 
-
 /* Update the game state. Called at an interval relative to the current level.
  */
 void update(void)
 {
     move_playerlasers();
-
-    /* Scoring */
-/*    switch (rows) {
-    case 1: score += SCORE_FACTOR_1 * level; break;
-    case 2: score += SCORE_FACTOR_2 * level; break;
-    case 3: score += SCORE_FACTOR_3 * level; break;
-    case 4: score += SCORE_FACTOR_4 * level; break;
-    }*/
 }
 
 #define TITLE_X (COLS / 2 - 9)
@@ -704,55 +711,71 @@ status:
     puts(LEVEL_X + 7, LEVEL_Y, BLUE, BLACK, "LEVEL");
     puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
-//#define WALLSPAWN (400000)
-//#define WALLMOVE (97500)
+
 #define WALLSPAWN (75000)
 #define WALLMOVE (37500)
-#define ENEMYSPAWN (400000)
-#define ENEMYMOVE (200000)
+#define ENEMYSPAWN (200000)
+#define ENEMYMOVE (100000)
+#define STARTWALLCHANGE (1000000)
 
 #define DIRECTIONSIZE (24)
 #define REPEATMOVE (9)
-#define STARTWALLCHANGE (1000000)
 
-u32 cont_enemyspawn = ENEMYSPAWN, cont_wallspawn = WALLSPAWN, cont_enemymove = ENEMYMOVE, cont_wallmove = WALLMOVE;
+u32 wallspawn = WALLSPAWN, wallmove = WALLMOVE, enemyspawn = ENEMYSPAWN, enemymove = ENEMYMOVE, startwallchange = STARTWALLCHANGE;
+
+u32 cont_enemyspawn = 0, cont_wallspawn = 0, cont_enemymove = 0, cont_wallmove = 0;
 
 u8 direction[DIRECTIONSIZE] = { 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 1, 0, 0, 1, 1, 0, 1, 2, 0, 0, 2, 1 };
 u8 dx = 0;
-u32 cont_start_dx = STARTWALLCHANGE, cont_repeat = REPEATMOVE, cont_change = 0;
+u32 cont_start_dx = 0, cont_repeat = REPEATMOVE, cont_change = 0;
 
+// Initialize next level 
+void next_level(u32 l) {
+    
+    level = l;
 
-noreturn main()
-{
-    clear(BLACK);
-    draw_about();
-    puts(TITLE_X - 8,  TITLE_Y + 10, BLACK,            GREEN,   " Press any key to continue... ");
+    // Initialize level settings 
+        switch(l) {
+        case 1:
+            enemyspawn = ENEMYSPAWN; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE;   
+            break;
+        case 2:
+            enemyspawn = ENEMYSPAWN * 2; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE; 
+            startwallchange = STARTWALLCHANGE * 1.5;  
+            break;
+        case 3:
+            enemyspawn = ENEMYSPAWN * 1.5; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE; 
+            startwallchange = STARTWALLCHANGE * 1.5;              
+            break;
+        case 4:
+            enemyspawn = ENEMYSPAWN * 1.5; 
+            wallspawn = enemyspawn / 2; 
+            enemymove = ENEMYMOVE * 2;  
+            wallmove = enemymove; 
+            startwallchange = STARTWALLCHANGE * 10;  
+            break;
+        }
 
-    /* Wait a full second to calibrate timing. */
-    u32 itpms;
-    u8 start_key = scan();
-    tps();
-    itpms = tpms; while (tpms == itpms) tps();
-    itpms = tpms; while (tpms == itpms) tps();
-
-    // Wait for a "press key to continue"
-    while (1) {
-      if ((start_key = scan())) {
-       break;
-      }
-      tps();
-    }
-
-    // Inicialize game speed
-    double speed_s = pow(0.8 - (10) * 0.007, (10));
-    speed = speed_s * 1000;
-
+        cont_enemyspawn = enemyspawn; 
+        cont_wallspawn = wallspawn; 
+        cont_enemymove = enemymove;  
+        cont_wallmove = wallmove; 
+        cont_start_dx = startwallchange; 
+    
     // Initialize pieces
     //Enemies
     u8 i;
-        switch(start_key) {
-        case KEY_1:
-            level = 1;
+        switch(l) {
+        case 1:
             for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 1;
                 enemy[i].hp = 3;
@@ -762,8 +785,7 @@ noreturn main()
                 enemy[i].y = 0; 
             }
             break;
-        case KEY_2:
-            level = 2;
+        case 2:
             for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 2;
                 enemy[i].hp = 999;
@@ -773,8 +795,7 @@ noreturn main()
                 enemy[i].y = 0; 
             }
             break;
-        case KEY_3:
-            level = 3;
+        case 3:
             for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 3;
                 enemy[i].hp = 3;
@@ -784,8 +805,7 @@ noreturn main()
                 enemy[i].y = 0; 
             }
             break;
-        case KEY_4:
-            level = 4;
+        case 4:
             for (i = 0; i < N_ENEMYS; i++) {
                 enemy[i].i = 4;
                 enemy[i].hp = 999;
@@ -794,17 +814,7 @@ noreturn main()
                 enemy[i].x = 0;   
                 enemy[i].y = 0; 
             }
-            break;
-        default:
-            level = 1; 
-            for (i = 0; i < N_ENEMYS; i++) {
-                enemy[i].i = 1;
-                enemy[i].hp = 3;
-                enemy[i].dmg = 1;     
-                enemy[i].alive = false; 
-                enemy[i].x = 0;   
-                enemy[i].y = 0; 
-            }           
+            break;  
         }
 
     //Wall
@@ -833,7 +843,49 @@ noreturn main()
              player.alive = false; 
              player.x = WELL_WIDTH + 1;   
              player.y = WELL_HEIGHT - 1; 
+}
 
+noreturn main()
+{
+    clear(BLACK);
+    draw_about();
+    puts(TITLE_X - 8,  TITLE_Y + 10, BLACK,            GREEN,   " Press any key to continue... ");
+
+    /* Wait a full second to calibrate timing. */
+    u32 itpms;
+    u8 start_key = scan();
+    tps();
+    itpms = tpms; while (tpms == itpms) tps();
+    itpms = tpms; while (tpms == itpms) tps();
+
+    // Wait for a "press key to continue"
+    while (1) {
+      if ((start_key = scan())) {
+       break;
+      }
+      tps();
+    }
+
+    // Inicialize game speed
+    double speed_s = pow(0.8 - (10) * 0.007, (10));
+    speed = speed_s * 1000;
+
+        switch(start_key) {
+        case KEY_1:
+            next_level(1);
+            break;
+        case KEY_2:
+            next_level(2);
+            break;
+        case KEY_3:
+            next_level(3);
+            break;
+        case KEY_4:
+            next_level(4);
+            break;
+        default:
+            next_level(1);   
+        }
 
     clear(BLACK);
     draw();
@@ -873,7 +925,7 @@ loop:
     }
 
   bool updated = false;
-  if (level == 2 || level == 3) {
+  if (level == 2 || level == 3 || level == 4) {
     if (cont_start_dx > 0) { // Update dx for spawn of walls and enemys once cont_start_dx reaches zero
       cont_start_dx += -1;
     } else {
@@ -895,7 +947,7 @@ loop:
           cont_change += 1;
           if (cont_change >= DIRECTIONSIZE) { // Finishes update for dx of walls and enemys 
             cont_change = 0;
-            cont_start_dx = STARTWALLCHANGE;
+            cont_start_dx = startwallchange;
           }
         }
       }
@@ -904,7 +956,7 @@ loop:
     if (cont_wallspawn > 0) { // Spawns a wall once counter reaches zero
       cont_wallspawn += -1;
     } else {
-      cont_wallspawn = WALLSPAWN;
+      cont_wallspawn = wallspawn;
       spawn_wall(0, dx);
       spawn_wall(1, dx);
       updated = true;
@@ -912,21 +964,21 @@ loop:
     if (cont_enemyspawn > 0) { // Spawns an enemy once counter reaches zero
       cont_enemyspawn += -1;
     } else {
-      cont_enemyspawn = ENEMYSPAWN;
+      cont_enemyspawn = enemyspawn;
       spawn_enemy(dx);
       updated = true;
     }
     if (cont_wallmove > 0) { // Moves walls once counter reaches zero
       cont_wallmove += -1;
     } else {
-      cont_wallmove = WALLMOVE;
+      cont_wallmove = wallmove;
       move_walls();
       updated = true;
     }
     if (cont_enemymove > 0) { // Moves enemys once counter reaches zero
       cont_enemymove += -1;
     } else {
-      cont_enemymove = ENEMYMOVE;
+      cont_enemymove = enemymove;
       move_enemys();
       updated = true;
     }
