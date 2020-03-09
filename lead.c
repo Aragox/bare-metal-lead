@@ -302,11 +302,153 @@ u32 score = 0, level = 1, speed = INITIAL_SPEED;
 
 bool paused = false, game_over = false;
 
+#define WALLSPAWN (75000)
+#define WALLMOVE (37500)
+#define ENEMYSPAWN (200000)
+#define ENEMYMOVE (100000)
+#define STARTWALLCHANGE (1000000)
+
+#define DIRECTIONSIZE (24)
+#define REPEATMOVE (9)
+
+u32 wallspawn = WALLSPAWN, wallmove = WALLMOVE, enemyspawn = ENEMYSPAWN, enemymove = ENEMYMOVE, startwallchange = STARTWALLCHANGE;
+
+u32 cont_enemyspawn = 0, cont_wallspawn = 0, cont_enemymove = 0, cont_wallmove = 0;
+
+u8 direction[DIRECTIONSIZE] = { 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 1, 0, 0, 1, 1, 0, 1, 2, 0, 0, 2, 1 };
+u8 dx = 0;
+u32 cont_start_dx = 0, cont_repeat = REPEATMOVE, cont_change = 0;
+
+// Initialize next level 
+void next_level(u32 l) {
+    
+    level = l;
+
+    // Initialize level settings 
+        switch(l) {
+        case 1:
+            enemyspawn = ENEMYSPAWN; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE;   
+            break;
+        case 2:
+            enemyspawn = ENEMYSPAWN * 2; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE; 
+            startwallchange = STARTWALLCHANGE * 1.5;  
+            break;
+        case 3:
+            enemyspawn = ENEMYSPAWN * 1.5; 
+            wallspawn = WALLSPAWN; 
+            enemymove = ENEMYMOVE;  
+            wallmove = WALLMOVE; 
+            startwallchange = STARTWALLCHANGE * 1.5;              
+            break;
+        case 4:
+            enemyspawn = ENEMYSPAWN * 1.5; 
+            wallspawn = enemyspawn / 2; 
+            enemymove = ENEMYMOVE * 2;  
+            wallmove = enemymove; 
+            startwallchange = STARTWALLCHANGE * 10;  
+            break;
+        }
+        cont_change = 0;
+        cont_enemyspawn = enemyspawn; 
+        cont_wallspawn = wallspawn; 
+        cont_enemymove = enemymove;  
+        cont_wallmove = wallmove; 
+        cont_start_dx = startwallchange; 
+    
+    // Initialize pieces
+    //Enemies
+    u8 i;
+        switch(l) {
+        case 1:
+            for (i = 0; i < N_ENEMYS; i++) {
+                enemy[i].i = 1;
+                enemy[i].hp = 3;
+                enemy[i].dmg = 1;     
+                enemy[i].alive = false; 
+                enemy[i].x = 0;   
+                enemy[i].y = 0; 
+            }
+            break;
+        case 2:
+            for (i = 0; i < N_ENEMYS; i++) {
+                enemy[i].i = 2;
+                enemy[i].hp = 999;
+                enemy[i].dmg = 1;     
+                enemy[i].alive = false; 
+                enemy[i].x = 0;   
+                enemy[i].y = 0; 
+            }
+            break;
+        case 3:
+            for (i = 0; i < N_ENEMYS; i++) {
+                enemy[i].i = 3;
+                enemy[i].hp = 3;
+                enemy[i].dmg = 1;     
+                enemy[i].alive = false; 
+                enemy[i].x = 0;   
+                enemy[i].y = 0; 
+            }
+            break;
+        case 4:
+            for (i = 0; i < N_ENEMYS; i++) {
+                enemy[i].i = 4;
+                enemy[i].hp = 999;
+                enemy[i].dmg = 1;     
+                enemy[i].alive = false; 
+                enemy[i].x = 0;   
+                enemy[i].y = 0; 
+            }
+            break;  
+        }
+
+    //Wall
+            for (i = 0; i < N_WALLS; i++) {
+                wall[i].i = 1;
+                wall[i].hp = 999;
+                wall[i].dmg = 1;     
+                wall[i].alive = false; 
+                wall[i].x = 0;   
+                wall[i].y = 0; 
+            }
+    //Player Laser
+            for (i = 0; i < N_LASERS; i++) {
+                laser[i].i = 1;
+                laser[i].hp = 999;
+                laser[i].dmg = 1;     
+                laser[i].alive = false; 
+                laser[i].x = 0;   
+                laser[i].y = 0; 
+            }
+
+    //Player
+             player.i = 1;
+             player.hp = 1;
+             player.dmg = 0;     
+             player.alive = false; 
+             player.x = WELL_WIDTH + 1;   
+             player.y = WELL_HEIGHT - 1; 
+}
+
 /* Increase the score by value, and change to next level.
  */
 void increase_score(u32 value)
 {
   score += value;
+  if (score >= 60 && score < 120 && level < 2) {
+     next_level(2);
+  }
+  if (score >= 120 && score < 180 && level < 3) {
+     next_level(3);
+  }
+  if (score >= 180 && level < 4) {
+     next_level(4);
+  }
 } 
 
 /* Try to move the player by dx and return true if successful.
@@ -712,138 +854,6 @@ status:
     puts(LEVEL_X + 5, LEVEL_Y + 2, BRIGHT | BLUE, BLACK, itoa(level, 10, 10));
 }
 
-#define WALLSPAWN (75000)
-#define WALLMOVE (37500)
-#define ENEMYSPAWN (200000)
-#define ENEMYMOVE (100000)
-#define STARTWALLCHANGE (1000000)
-
-#define DIRECTIONSIZE (24)
-#define REPEATMOVE (9)
-
-u32 wallspawn = WALLSPAWN, wallmove = WALLMOVE, enemyspawn = ENEMYSPAWN, enemymove = ENEMYMOVE, startwallchange = STARTWALLCHANGE;
-
-u32 cont_enemyspawn = 0, cont_wallspawn = 0, cont_enemymove = 0, cont_wallmove = 0;
-
-u8 direction[DIRECTIONSIZE] = { 0, 1, 1, 0, 0, 1, 1, 0, 0, 2, 1, 2, 1, 0, 0, 1, 1, 0, 1, 2, 0, 0, 2, 1 };
-u8 dx = 0;
-u32 cont_start_dx = 0, cont_repeat = REPEATMOVE, cont_change = 0;
-
-// Initialize next level 
-void next_level(u32 l) {
-    
-    level = l;
-
-    // Initialize level settings 
-        switch(l) {
-        case 1:
-            enemyspawn = ENEMYSPAWN; 
-            wallspawn = WALLSPAWN; 
-            enemymove = ENEMYMOVE;  
-            wallmove = WALLMOVE;   
-            break;
-        case 2:
-            enemyspawn = ENEMYSPAWN * 2; 
-            wallspawn = WALLSPAWN; 
-            enemymove = ENEMYMOVE;  
-            wallmove = WALLMOVE; 
-            startwallchange = STARTWALLCHANGE * 1.5;  
-            break;
-        case 3:
-            enemyspawn = ENEMYSPAWN * 1.5; 
-            wallspawn = WALLSPAWN; 
-            enemymove = ENEMYMOVE;  
-            wallmove = WALLMOVE; 
-            startwallchange = STARTWALLCHANGE * 1.5;              
-            break;
-        case 4:
-            enemyspawn = ENEMYSPAWN * 1.5; 
-            wallspawn = enemyspawn / 2; 
-            enemymove = ENEMYMOVE * 2;  
-            wallmove = enemymove; 
-            startwallchange = STARTWALLCHANGE * 10;  
-            break;
-        }
-
-        cont_enemyspawn = enemyspawn; 
-        cont_wallspawn = wallspawn; 
-        cont_enemymove = enemymove;  
-        cont_wallmove = wallmove; 
-        cont_start_dx = startwallchange; 
-    
-    // Initialize pieces
-    //Enemies
-    u8 i;
-        switch(l) {
-        case 1:
-            for (i = 0; i < N_ENEMYS; i++) {
-                enemy[i].i = 1;
-                enemy[i].hp = 3;
-                enemy[i].dmg = 1;     
-                enemy[i].alive = false; 
-                enemy[i].x = 0;   
-                enemy[i].y = 0; 
-            }
-            break;
-        case 2:
-            for (i = 0; i < N_ENEMYS; i++) {
-                enemy[i].i = 2;
-                enemy[i].hp = 999;
-                enemy[i].dmg = 1;     
-                enemy[i].alive = false; 
-                enemy[i].x = 0;   
-                enemy[i].y = 0; 
-            }
-            break;
-        case 3:
-            for (i = 0; i < N_ENEMYS; i++) {
-                enemy[i].i = 3;
-                enemy[i].hp = 3;
-                enemy[i].dmg = 1;     
-                enemy[i].alive = false; 
-                enemy[i].x = 0;   
-                enemy[i].y = 0; 
-            }
-            break;
-        case 4:
-            for (i = 0; i < N_ENEMYS; i++) {
-                enemy[i].i = 4;
-                enemy[i].hp = 999;
-                enemy[i].dmg = 1;     
-                enemy[i].alive = false; 
-                enemy[i].x = 0;   
-                enemy[i].y = 0; 
-            }
-            break;  
-        }
-
-    //Wall
-            for (i = 0; i < N_WALLS; i++) {
-                wall[i].i = 1;
-                wall[i].hp = 999;
-                wall[i].dmg = 1;     
-                wall[i].alive = false; 
-                wall[i].x = 0;   
-                wall[i].y = 0; 
-            }
-    //Player Laser
-            for (i = 0; i < N_LASERS; i++) {
-                laser[i].i = 1;
-                laser[i].hp = 999;
-                laser[i].dmg = 1;     
-                laser[i].alive = false; 
-                laser[i].x = 0;   
-                laser[i].y = 0; 
-            }
-
-    //Player
-             player.i = 1;
-             player.hp = 1;
-             player.dmg = 0;     
-             player.alive = false; 
-             player.x = WELL_WIDTH + 1;   
-             player.y = WELL_HEIGHT - 1; 
-}
 
 noreturn main()
 {
