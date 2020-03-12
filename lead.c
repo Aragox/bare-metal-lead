@@ -739,7 +739,11 @@ void draw_about(void) {
     puts(TITLE_X + 9,  TITLE_Y + 2, BLACK,            GREEN,   "   ");
 /*    puts(TITLE_X + 12, TITLE_Y + 2, BLACK,            YELLOW,  "   ");
     puts(TITLE_X + 15, TITLE_Y + 2, BLACK,            CYAN,    "   ");*/
-
+    
+    puts(4,  TITLE_Y + 8, BRIGHT | GRAY, BLACK, " Edgar Parra Barillas");
+    puts(4,  TITLE_Y + 7, BRIGHT | GRAY, BLACK, " Ricardo Viquez Mora");
+    puts(4,  TITLE_Y + 6, BRIGHT | GRAY, BLACK, " Jefri Cardenas Villatoro");
+    
     puts(0, ROWS - 1, BRIGHT | BLACK, BLACK,
          LEAD_NAME " " LEAD_VERSION " " LEAD_URL);
 }
