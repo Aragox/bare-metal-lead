@@ -1,0 +1,37 @@
+Se asume que se está usando el Sistema Operativo, Ubuntu 18.04.3 LTS, con arquitectura x86-64
+
+PASOS PARA CORRER EL PROYECTO CON QEMU:
+1. Abrir una terminal en el directorio del proyecto
+2. Correr el comando "make" en la terminal sin las comillas (para hacer el build del proyeto)
+3. Correr el comando "make qemu" (para bootear el juego directamente con el emulador QEMU)
+
+PASOS PARA GENERAR USB BOOTEABLE
+1. Abrir una terminal en el directorio del proyecto
+2. Correr el comando "make" en la terminal sin las comillas (para hacer el build del proyeto)
+3. Correr el comando "make lead.iso" en la terminal sin las comillas (para generar el lead.iso)
+4. Abrir la aplicación llamada "Startup Disk Creator"
+5. Seleccionar la USB, y el archivo "lead.iso"
+6. Empezar el proceso. Ahora la USB es booteable
+
+PASOS PARA CORRER EL JUEGO CON USB BOOTEABLE:
+1. Insertar la USB booteable en el puerto de una computadora apagada
+2. Encender la computadora, y rápidamente, oprimir la tecla "F12"
+3. Seleccionar que se use la USB para hacer boot.
+4. El juego empieza a correr.
+
+################################################################################################
+¿CÓMO JUGAR EL JUEGO?
+- En la primera pantalla, para empezar el juego, se debe presionar cualquier tecla. 
+  * Si se presiona la tecla "2", se empieza en el nivel 2.
+  * Si se presiona la tecla "3", se empieza en el nivel 3.
+  * Si se presiona la tecla "4", se empieza en el nivel 4.
+  ** Si se presiona cualquier otra tecla distinta de las mencionadas, se empieza en el nivel 1.
+- La nave del jugador sólo se mueve horizontalmente con las flechas direccionales del teclado "<--" y "-->" 
+- Para disparar, presione la tecla de barra espaciadora
+- Hay GAMEOVER, si la nave del jugador choca contra cualquier obstáculo.
+- El jugador avanza de nivel, cada vez que gana 60pts en el score
+  * En los niveles 1 y 3, estos puntos se obtienen destruyendo naves enemigas con el láser del jugador.
+  * En los niveles 2 y 4, estos puntos se obtienen esquivando asteroides (en el nivel 2), y satélites (en el nivel 4)
+
+
+
