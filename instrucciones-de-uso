@@ -5,6 +5,7 @@ PASOS PARA CORRER EL PROYECTO CON QEMU:
 2. Correr el comando "make" en la terminal sin las comillas (para hacer el build del proyeto)
 3. Correr el comando "make qemu" (para bootear el juego directamente con el emulador QEMU)
 
+***NOTA: actualmente es posible generar la USB booteable, pero no corre el juego exitósamente al bootear directamente desde la USB
 PASOS PARA GENERAR USB BOOTEABLE
 1. Abrir una terminal en el directorio del proyecto
 2. Correr el comando "make" en la terminal sin las comillas (para hacer el build del proyeto)
