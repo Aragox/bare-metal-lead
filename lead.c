@@ -743,7 +743,9 @@ void draw_about(void) {
     puts(4,  TITLE_Y + 8, BRIGHT | GRAY, BLACK, " Edgar Parra Barillas");
     puts(4,  TITLE_Y + 7, BRIGHT | GRAY, BLACK, " Ricardo Viquez Mora");
     puts(4,  TITLE_Y + 6, BRIGHT | GRAY, BLACK, " Jefri Cardenas Villatoro");
-    
+
+    puts(4,  2, BRIGHT | GRAY, BLACK, "Principios de Sistemas Operativos");
+    puts(4,  1, BRIGHT | GRAY, BLACK, "Profesor: Ernesto Rivera Alvarado");
     puts(0, ROWS - 1, BRIGHT | BLACK, BLACK,
          LEAD_NAME " " LEAD_VERSION " " LEAD_URL);
 }
