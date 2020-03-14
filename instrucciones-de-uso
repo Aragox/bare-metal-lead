@@ -1,4 +1,4 @@
-Se asume que se está usando el Sistema Operativo, Ubuntu 18.04.3 LTS, con arquitectura x86-64
+Se asume que se está usando el Sistema Operativo, Ubuntu 18.04.3 LTS, con arquitectura x86-64, y que se instaló el ensamblador NASM, un compilador C (gcc) y un linker.
 
 PASOS PARA CORRER EL PROYECTO CON QEMU:
 1. Abrir una terminal en el directorio del proyecto
